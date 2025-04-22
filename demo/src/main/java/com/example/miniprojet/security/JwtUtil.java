@@ -1,45 +1,39 @@
 package com.example.miniprojet.security;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
-import org.springframework.stereotype.Component;
-import java.util.Date;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import org.springframework.stereotype.Component;
+
+import java.util.Base64;
+import java.util.Date;
 
 @Component
 public class JwtUtil {
-    private final JwtProperties jwtProperties;
 
-    public JwtUtil(JwtProperties jwtProperties) {
-        this.jwtProperties = jwtProperties;
-    }
+    private final String SECRET = Base64.getEncoder().encodeToString("secretkey".getBytes());
+    private final long EXPIRATION_TIME = 86400000; // 1 jour en ms
 
     public String generateToken(String username) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(now)
-                .setExpiration(expiryDate)
-                .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
-                .compact();
-    }
-
-    public String extractUsername(String token) {
-        return Jwts.parser()
-                .setSigningKey(jwtProperties.getSecret())
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        return JWT.create()
+                .withSubject(username)
+                .withIssuedAt(new Date())
+                .withExpiresAt(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .sign(Algorithm.HMAC256(SECRET));
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .setSigningKey(jwtProperties.getSecret())
-                    .parseClaimsJws(token);
+            JWT.require(Algorithm.HMAC256(SECRET)).build()
+                    .verify(token);
             return true;
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public String extractUsername(String token) {
+        return JWT.require(Algorithm.HMAC256(SECRET)).build()
+                .verify(token)
+                .getSubject();
     }
 }
