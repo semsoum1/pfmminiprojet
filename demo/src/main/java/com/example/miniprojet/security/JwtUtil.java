@@ -3,30 +3,40 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Component;
 import java.util.Date;
-import java.util.List;
-import java.util.*;
+
 
 @Component
 public class JwtUtil {
-    private final String SECRET = "mysecretkey";
-    private final long EXPIRATION = 86400000;
+    private final JwtProperties jwtProperties;
+
+    public JwtUtil(JwtProperties jwtProperties) {
+        this.jwtProperties = jwtProperties;
+    }
 
     public String generateToken(String username) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
         return Jwts.builder()
                 .setSubject(username)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
-                .signWith(SignatureAlgorithm.HS256, SECRET)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(SignatureAlgorithm.HS256, jwtProperties.getSecret())
                 .compact();
     }
 
     public String extractUsername(String token) {
-        return Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parser()
+                .setSigningKey(jwtProperties.getSecret())
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(SECRET).parseClaimsJws(token);
+            Jwts.parser()
+                    .setSigningKey(jwtProperties.getSecret())
+                    .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
             return false;

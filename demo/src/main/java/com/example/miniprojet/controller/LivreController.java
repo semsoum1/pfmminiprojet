@@ -12,12 +12,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/livres")
 public class LivreController {
-    @Autowired private LivreService LivreService;
-    @Autowired private com.example.miniprojet.service.LivreService livreService;
+    @Autowired private LivreService livreService;
+
 
     @GetMapping
     public List<Livre> getAvailableLivres() {
-        return LivreService.getAvailableLivres();
+        return livreService.getAvailableLivres();
     }
 
     @PostMapping("/emprunt/{livreId}")
@@ -27,7 +27,7 @@ public class LivreController {
 
     @PostMapping("/retour/{livreId}")
     public ResponseEntity<String> retourLivre(@PathVariable Long livreId, Authentication auth) {
-        return LivreService.retourLivre(livreId, auth.getName());
+        return livreService.retourLivre(livreId, auth.getName());
     }
 
     @PostMapping
